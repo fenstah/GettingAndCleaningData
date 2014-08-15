@@ -18,7 +18,7 @@ getDataFiles <- function()
         
     ##check the subdirectories for train and test do not exist, extract from zip file
     if(!file.exists("./data/UCI HAR Dataset/test") | 
-           !file.exists("./data/UCI HAR Dataset/test/subject_test.txt") |
+#            !file.exists("./data/UCI HAR Dataset/test/subject_test.txt") |
            !file.exists("./data/UCI HAR Dataset/test/X_test.txt") |
            !file.exists("./data/UCI HAR Dataset/test/y_test.txt") |
 #            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals") |  
@@ -32,7 +32,7 @@ getDataFiles <- function()
 #            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/total_acc_y_test.txt") | 
 #            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/total_acc_z_test.txt") | 
        !file.exists("./data/UCI HAR Dataset/train") |
-           !file.exists("./data/UCI HAR Dataset/train/subject_train.txt") |
+#            !file.exists("./data/UCI HAR Dataset/train/subject_train.txt") |
            !file.exists("./data/UCI HAR Dataset/train/X_train.txt") |
            !file.exists("./data/UCI HAR Dataset/train/y_train.txt") 
 #            | !file.exists("./data/UCI HAR Dataset/train/Inertial Signals") |  
@@ -49,11 +49,14 @@ getDataFiles <- function()
     {
         ##extract file from zip.  suppress warnings for files we dont need to overwrite
         suppressWarnings(unzip("./data/rawdata.zip", overwrite = FALSE, exdir="./data"))
-    }
-            
-        ##create a file with only the records needed
-        #truncdata<-read.table("household_power_consumption.txt", header=T, sep=";", na.strings="?")
-        #truncdata<-truncdata[as.Date(truncdata$Date, format="%d/%m/%Y") <= "2007-02-02" & as.Date(truncdata$Date, format="%d/%m/%Y") >= "2007-02-01",]     #subset data to only use Feb 1 and 2 2007
-        #write.table(truncdata, file = "truncdata.csv", row.names=FALSE, col.names=TRUE, sep=",", quote=FALSE)   
+    }            
 }
 
+##read the data from the files and merge the datasets
+readAndMergeData <- function()
+{   
+    testData<-read.table("./data/UCI HAR Dataset/test/X_test.txt", header=F, stringsAsFactors=FALSE)
+    trainData<-read.table("./data/UCI HAR Dataset/train/X_train.txt", header=F, stringsAsFactors=FALSE)
+    mergedData<-rbind(testData,trainData)
+    return (mergedData)
+}
