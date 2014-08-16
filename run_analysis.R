@@ -17,34 +17,16 @@ getDataFiles <- function()
     }
         
     ##check the subdirectories for train and test do not exist, extract from zip file
-    if(!file.exists("./data/UCI HAR Dataset/test") | 
-#            !file.exists("./data/UCI HAR Dataset/test/subject_test.txt") |
+    if(!file.exists("./data/UCI HAR Dataset/features.txt") | 
+          !file.exists("./data/UCI HAR Dataset/activity_labels.txt") | 
+        !file.exists("./data/UCI HAR Dataset/test") | 
+           !file.exists("./data/UCI HAR Dataset/test/subject_test.txt") |
            !file.exists("./data/UCI HAR Dataset/test/X_test.txt") |
            !file.exists("./data/UCI HAR Dataset/test/y_test.txt") |
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals") |  
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/body_acc_x_test.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/body_acc_y_test.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/body_acc_z_test.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/body_gyro_x_test.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/body_gyro_y_test.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/body_gyro_z_test.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/total_acc_x_test.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/total_acc_y_test.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/test/Inertial Signals/total_acc_z_test.txt") | 
        !file.exists("./data/UCI HAR Dataset/train") |
-#            !file.exists("./data/UCI HAR Dataset/train/subject_train.txt") |
+           !file.exists("./data/UCI HAR Dataset/train/subject_train.txt") |
            !file.exists("./data/UCI HAR Dataset/train/X_train.txt") |
            !file.exists("./data/UCI HAR Dataset/train/y_train.txt") 
-#            | !file.exists("./data/UCI HAR Dataset/train/Inertial Signals") |  
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/body_acc_x_train.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/body_acc_y_train.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/body_acc_z_train.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/body_gyro_x_train.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/body_gyro_y_train.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/body_gyro_z_train.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/total_acc_x_train.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/total_acc_y_train.txt") | 
-#            !file.exists("./data/UCI HAR Dataset/train/Inertial Signals/total_acc_z_train.txt")
         )
     {
         ##extract file from zip.  suppress warnings for files we dont need to overwrite
@@ -52,11 +34,65 @@ getDataFiles <- function()
     }            
 }
 
+##get a vector for the features
+getFeatures <- function()
+{
+    features<-read.table("./data/UCI HAR Dataset/features.txt", stringsAsFactors=FALSE, header=F)
+    
+    #make the feature names more meaningfule
+    #remove parantheses
+    features$V2<-gsub("[()]", "", features$V2)
+    
+    #replace commas with underscores
+    features$V2<-gsub(",", "_", features$V2)
+    
+    #return a vector of feature names
+    return (features$V2)
+}
+
 ##read the data from the files and merge the datasets
+##the dataset contains the raw data from the sensors (X_train and X_Test), 
 readAndMergeData <- function()
-{   
-    testData<-read.table("./data/UCI HAR Dataset/test/X_test.txt", header=F, stringsAsFactors=FALSE)
+{           
+    #get test data and combine with subject and activity labels
+    testData<-read.table("./data/UCI HAR Dataset/test/X_test.txt", header=F, stringsAsFactors=FALSE)    
+    
+    #get training data and combine with subject and activity labels
     trainData<-read.table("./data/UCI HAR Dataset/train/X_train.txt", header=F, stringsAsFactors=FALSE)
-    mergedData<-rbind(testData,trainData)
-    return (mergedData)
+    
+    #combine the two datasets into one
+    combinedData<-rbind(testData,trainData)
+    
+    #add the columns names
+    colnames(combinedData) <- getFeatures()
+    return (combinedData)
+}
+
+##subset the dataset for only those features that relate to mean or std
+filterOutMeansAndStds<-function(sensorData)
+{
+    return (sensorData[,which(colnames(sensorData) %like% "[Mm][Ee][Aa][Nn]" | colnames(sensorData) %like% "[Ss][Tt][Dd]")])
+}
+
+##adds the subject information (subject_train and suject_test) and the activity information (y_train and y_test)
+##to the dataset
+addSubjectAndActivityLabels <- function(sensorData)
+{
+    #get activity labels
+    activityLabels<-read.table("./data/UCI HAR Dataset/activity_labels.txt", header=F, stringsAsFactors=FALSE)  
+    
+    #create list of activity labels for test and training data sets
+    testActivity<-read.table("./data/UCI HAR Dataset/test/y_test.txt", header=F, stringsAsFactors=FALSE)
+    trainActivity<-read.table("./data/UCI HAR Dataset/train/y_train.txt", header=F, stringsAsFactors=FALSE)
+    testActivity[,1]<-activityLabels[testActivity[,1],2]
+    trainActivity[,1]<-activityLabels[trainActivity[,1],2]            
+    activity<-rbind(testActivity,trainActivity)
+    colnames(activity)<-"Activity"
+        
+    testSubjects<-read.table("./data/UCI HAR Dataset/test/subject_test.txt", header=F, stringsAsFactors=FALSE)    
+    trainSubjects<-read.table("./data/UCI HAR Dataset/train/subject_train.txt", header=F, stringsAsFactors=FALSE)
+    subjects<-rbind(testSubjects,trainSubjects)
+    colnames(subjects)<-"Subject"
+    
+    sensorData<-cbind(subjects, activity, sensorData)
 }
