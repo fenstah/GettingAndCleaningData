@@ -71,7 +71,7 @@ readAndMergeData <- function()
 ##subset the dataset for only those features that relate to mean or std
 filterOutMeansAndStds<-function(sensorData)
 {
-    return (sensorData[,which(colnames(sensorData) %like% "[Mm][Ee][Aa][Nn]" | colnames(sensorData) %like% "[Ss][Tt][Dd]")])
+    return (sensorData[,which(colnames(sensorData) %like% "-[Mm][Ee][Aa][Nn]" | colnames(sensorData) %like% "-[Ss][Tt][Dd]")])
 }
 
 ##adds the subject information (subject_train and suject_test) and the activity information (y_train and y_test)
@@ -95,4 +95,16 @@ addSubjectAndActivityLabels <- function(sensorData)
     colnames(subjects)<-"Subject"
     
     sensorData<-cbind(subjects, activity, sensorData)
+}
+
+if(!is.element('reshape2', installed.packages()[,1])) 
+{
+    install.packages('reshape2')
+}
+library(reshape2)
+##perform a melt to create a dataset for the means of the variables for each combination of variable, subject, and activity
+meltDataSet<-function(sensorDataWithSubjectAndActivity)
+{
+    meltedDF<-melt(sensorDataWithSubjectAndActivity, , id=c("Subject", "Activity"))
+    return (dcast(meltedDF, Subject + Activity ~ variable, mean))
 }
