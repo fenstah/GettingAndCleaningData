@@ -1,6 +1,6 @@
-
 ##Make sure all the raw data files exist.  
-##If not download the zip file, create the data subdirectory and unzip the raw data files into it
+##If data files do not yet exists, download the zip file, create the data subdirectory 
+##and unzip the raw data files into it
 getDataFiles <- function()
 {
     ##check if data subdectory exists
@@ -34,7 +34,7 @@ getDataFiles <- function()
     }            
 }
 
-##get a vector for the features
+##Get a vector for the features
 getFeatures <- function()
 {
     features<-read.table("./data/UCI HAR Dataset/features.txt", stringsAsFactors=FALSE, header=F)
@@ -50,7 +50,7 @@ getFeatures <- function()
     return (features$V2)
 }
 
-##read the data from the files and merge the datasets
+##Read the data from the files and merge the datasets
 ##the dataset contains the raw data from the sensors (X_train and X_Test), 
 readAndMergeData <- function()
 {           
@@ -68,14 +68,14 @@ readAndMergeData <- function()
     return (combinedData)
 }
 
-##subset the dataset for only those features that relate to mean or std
+##Subset the dataset for only those features that relate to mean or std
 filterOutMeansAndStds<-function(sensorData)
 {
     return (sensorData[,which(colnames(sensorData) %like% "-[Mm][Ee][Aa][Nn]" | colnames(sensorData) %like% "-[Ss][Tt][Dd]")])
 }
 
-##adds the subject information (subject_train and suject_test) and the activity information (y_train and y_test)
-##to the dataset
+##Add the subject information (subject_train and suject_test) and 
+##the activity information (y_train and y_test) to the dataset
 addSubjectAndActivityLabels <- function(sensorData)
 {
     #get activity labels
@@ -97,14 +97,46 @@ addSubjectAndActivityLabels <- function(sensorData)
     sensorData<-cbind(subjects, activity, sensorData)
 }
 
+##Perform a melt to create a dataset for the means of the variables for 
+##each combination of variable, ##subject, and activity
 if(!is.element('reshape2', installed.packages()[,1])) 
 {
     install.packages('reshape2')
 }
 library(reshape2)
-##perform a melt to create a dataset for the means of the variables for each combination of variable, subject, and activity
 meltDataSet<-function(sensorDataWithSubjectAndActivity)
 {
     meltedDF<-melt(sensorDataWithSubjectAndActivity, , id=c("Subject", "Activity"))
     return (dcast(meltedDF, Subject + Activity ~ variable, mean))
 }
+
+##Save the dataset to the file tidydataset.txt
+saveDataSet<-function(dataset)
+{
+    write.table(dataset, "tidydataset.txt", row.name=FALSE)
+}
+
+##Perform the steps for the run analysis
+runAnalysis<-function()
+{
+    cat("0. Getting the raw data files\n")
+    getDataFiles()
+    
+    cat("1. Merging the training and the test sets to create one data set\n")
+    originalDataset<-readAndMergeData()
+    
+    cat("2. Extracting only the measurements on the mean and standard deviation for each measurement (with labels).\n")
+    filteredDataset<-filterOutMeansAndStds(originalDataset)
+    
+    cat("3. Setting descriptive activity names to name the activities in the data set\n")
+    dataSetWithLabels<-addSubjectAndActivityLabels(filteredDataset)
+    
+    cat("4. Creating tidy data set for the means of the variables for combination of variable, subject, and activity.\n")
+    newTidyDataset<-meltDataSet(dataSetWithLabels)
+    
+    cat("5. Saving to new data set to file\n")
+    saveDataSet(newTidyDataset)
+}
+
+##Call the runAnalysis to perform all the steps needed to create the tidy data set
+runAnalysis()
