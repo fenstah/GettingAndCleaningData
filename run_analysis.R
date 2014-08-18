@@ -57,7 +57,6 @@ readAndMergeData <- function()
 ##Subset the dataset for only those features that relate to mean or std
 filterOutMeansAndStds<-function(sensorData)
 {    
-    #return (sensorData[,which(colnames(sensorData) %like% "_mean[(][)]" | colnames(sensorData) %like% "_std[(][)]")])
     return (sensorData[,which(colnames(sensorData) %like% "mean[(]" | colnames(sensorData) %like% "std[(]")])
 }
 
