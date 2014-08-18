@@ -34,21 +34,6 @@ getDataFiles <- function()
     }            
 }
 
-##Get a vector for the features
-getFeatures <- function()
-{
-    features<-read.table("./data/UCI HAR Dataset/features.txt", stringsAsFactors=FALSE, header=F)
-    
-    #make the feature names more meaningfule
-    #remove parantheses
-    features$V2<-gsub("[()]", "", features$V2)
-    
-    #replace commas with underscores
-    features$V2<-gsub(",", "_", features$V2)
-    
-    #return a vector of feature names
-    return (features$V2)
-}
 
 ##Read the data from the files and merge the datasets
 ##the dataset contains the raw data from the sensors (X_train and X_Test), 
@@ -64,14 +49,16 @@ readAndMergeData <- function()
     combinedData<-rbind(testData,trainData)
     
     #add the columns names
-    colnames(combinedData) <- getFeatures()
+    features <- read.table("./data/UCI HAR Dataset/features.txt", stringsAsFactors=FALSE, header=F)
+    colnames(combinedData) <- features$V2
     return (combinedData)
 }
 
 ##Subset the dataset for only those features that relate to mean or std
 filterOutMeansAndStds<-function(sensorData)
-{
-    return (sensorData[,which(colnames(sensorData) %like% "-[Mm][Ee][Aa][Nn]" | colnames(sensorData) %like% "-[Ss][Tt][Dd]")])
+{    
+    #return (sensorData[,which(colnames(sensorData) %like% "_mean[(][)]" | colnames(sensorData) %like% "_std[(][)]")])
+    return (sensorData[,which(colnames(sensorData) %like% "mean[(]" | colnames(sensorData) %like% "std[(]")])
 }
 
 ##Add the subject information (subject_train and suject_test) and 
@@ -93,6 +80,10 @@ addSubjectAndActivityLabels <- function(sensorData)
     trainSubjects<-read.table("./data/UCI HAR Dataset/train/subject_train.txt", header=F, stringsAsFactors=FALSE)
     subjects<-rbind(testSubjects,trainSubjects)
     colnames(subjects)<-"Subject"
+    
+    #remove the paranthesis and substitute underscore for dash from column names for increased readability
+    colnames(sensorData)<-gsub("[()]","",colnames(sensorData))
+    colnames(sensorData)<-gsub("-","_",colnames(sensorData))
     
     sensorData<-cbind(subjects, activity, sensorData)
 }
